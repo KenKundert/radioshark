@@ -1,0 +1,26 @@
+radioshark
+==========
+
+Utilities for use with Griffin Technologies RadioShark.
+
+This repository contains two Python programs:
+
+giants.py:
+    This program is used to convert a CSV file downloaded from the San Francisco
+    Giants website that contains their 2012 schedule into a RadioShark
+    Schedule.ini file. When place in the correct location, this file will cause
+    the RadioShark to record all of the Giants games.
+
+giantsd.py:
+    A simple daemon that uses the same downloaded CSV file that contains the
+    Giants schedule to record the games on Linux without the help of the
+    RadioShark application.
+
+To get the source code:                                                          
+$ git clone git://github.com/KenKundert/radioshark.git                                   
+                                                                                 
+Once cloned, you can get the latest updates using:                               
+$ git pull 
+
+For information about these two programs, visit
+www.nurdletech.com/radioshark.html.
