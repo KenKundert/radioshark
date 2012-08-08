@@ -70,19 +70,29 @@ def record(game, nextGame):
     )
     latest =  makePath(expandPath(AudioDirectory), 'latest.ogg')
     # build the commands
-    recorder = 'arecord -q -d {duration} -c 2 -f S16 -r 44100 -D {device}'.format(
-        duration = 1.1829*3600*RecordingDuration, device = SharkAddress
-        # for reasons I do not understand arecord always records less time than
-        # I ask for. The factor of 1.1829 compensates for this.
+    recorder = ' '.join([
+        'arecord'                        # audio recorder
+      , '-q'                             # quiet
+      , '-d {duration}'                  # recording time
+      , '--max-file-time {duration}'     # recording time before switching files (must be >= recording time)
+      , '-c 2'                           # input stream is 2 channels
+      , '-f S16'                         # input stream is 16 bit signed
+      , '-r 44100'                       # rate of input stream is 44.1kHz
+      , '-D {device}'                    # audio generator
+      , '-t raw'                         # output format is raw (don't use .wav, it cuts out after 3 hours and 22 minutes because of a size limit on .wav files)
+    ]).format(
+        duration = 3600*RecordingDuration, device = SharkAddress
     )
 
     if Encoder == 'ogg':
         encoder = ' '.join([
-            'oggenc'
+            'oggenc'                     # Ogg encoder
           , '-Q'                         # quiet
+          , '-r'                         # input format is raw
           , '--resample 8000'            # sample rate (8000 and 11025 are suitable choices for AM radio)
           , '--downmix'                  # convert from stereo to mono
           , '-q 0'                       # quality level (range is -1 to 10 with 10 being highest)
+          , '--ignorelength'             # Allow input stream to exceed 4GB
           , '-o {filename}'              # output file name
           , '--title "{title} ({date})"' # title
           , '--album "{title}"'          # album
