@@ -19,11 +19,11 @@ giantsd.py:
 For information about these two programs, visit
 www.nurdletech.com/radioshark.html.
 
-To get the source code:                                                          
-    $ git clone git://github.com/KenKundert/radioshark.git                                   
-                                                                                 
-Once cloned, you can get the latest updates using:                               
-    $ git pull 
+To get the source code:
+    $ git clone git://github.com/KenKundert/radioshark.git
+
+Once cloned, you can get the latest updates using:
+    $ git pull
 
 Before you can use them, you will need to install the libhid-devel, alsa-utils,
 vorbis-tools, and mplayer packages. To do so on Fedora, as root run:
