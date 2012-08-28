@@ -1,0 +1,7 @@
+#!/bin/csh -f
+
+curl "http://sports.yahoo.com/nfl/teams/sfo/ical.ics" -o 49ers.ics
+
+
+~/bin/clear
+./49ersd.py 49ers.ics

@@ -16,6 +16,19 @@ giantsd.py:
     Giants schedule to record the games on Linux without the help of the
     RadioShark application.
 
+start-giants:
+    A shell script that downloads the latest Giants schedule from their webpage 
+    and starts the Giants daemon.
+
+49ersd.py:
+    A simple daemon that uses a downloaded vCalendar (.ics file)
+    that contains the 49ers schedule to record the games on Linux without the 
+    help of the RadioShark application (in development).
+
+start-49ers:
+    A shell script that downloads the latest 49ers schedule from Yahoo and 
+    starts the 49ers daemon.
+
 For information about these two programs, visit
 www.nurdletech.com/radioshark.html.
 

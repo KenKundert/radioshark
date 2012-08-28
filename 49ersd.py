@@ -1,66 +1,63 @@
 #!/bin/env python
-# The program acts like a daemon that reads a CSV file that contains the Giants
-# schedule. It then goes to sleep until the start of the next game. At that time
-# it wakes up and records the game. At the end of the game it goes to sleep and
-# waits for the next game.
+# The program acts like a daemon that reads an vCalendar ICS file that contains
+# the 49ers schedule. It then goes to sleep until the start of the next game. At
+# that time it wakes up and records the game. At the end of the game it goes to
+# sleep and waits for the next game.
 
 # Globals {{{1
-AudioDirectory = '~/music/giants'
+AudioDirectory = '~/music/49ers'
 RecordingDuration = 4
 Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
 SharkAddress = 'hw:2,0'
-Station = '-am 680'
+Station = '-am 810'
 # Use arecord -l to determine address.
 # First number is card number, second is device number.
 
 
 # Imports {{{1
-import csv
+import vobject
 import argparse
 import time
+import datetime
+import pytz
 import sched
 from fileutils import makePath, expandPath, execute, ExecuteError, remove
 import sys, io, os
 
 # Read command line {{{1
-clp = argparse.ArgumentParser(description="Giant's recording daemon")
-clp.add_argument('csvfile', nargs=1, help="Giant's schedule as CSV file", action='store')
+clp = argparse.ArgumentParser(description="49er's recording daemon")
+clp.add_argument('icsfile', nargs=1, help="49er's schedule as ICS file", action='store')
 args = clp.parse_args()
 
-# Read CSV file {{{1
+# Read ICS file {{{1
 games = []
 try:
-    with open(args.csvfile[0]) as csvFile:
-        schedule = csv.DictReader(csvFile)
-        try:
-            for game in schedule:
-                startDate = game['START_DATE']
-                startTime = game['START_TIME']
-                description = game['SUBJECT']
-                media = game['DESCRIPTION']
-                tstart = time.strptime(
-                    '%s;%s' % (startDate, startTime)
-                  , '%m/%d/%y;%I:%M %p'
+    with open(args.icsfile[0]) as icsFile:
+        localTimeZone = pytz.timezone('US/Pacific')
+        # now = datetime.datetime.now(pytz.utc)
+        schedule = vobject.readOne(icsFile.read()).components()
+        for game in schedule:
+            gameInfo = {}
+            for field in game.lines():
+                gameInfo.update({field.name: field.value})
+            start = gameInfo['DTSTART'].astimezone(localTimeZone)
+            description = gameInfo['SUMMARY']
+            now = datetime.datetime.now(localTimeZone)
+            if start < now:
+                continue
+            games += [{
+                'desc': description
+              , 'filename': '{year}{month}{day}-{desc}'.format(
+                    desc = description.replace(' ', '-')
+                  , year = start.year
+                  , month = start.month
+                  , day = start.day
                 )
-                start = time.mktime(tstart)
-                now = int(time.time())
-                if start < now:
-                    continue
-                month, day, year = startDate.split('/')
-                games += [{
-                    'desc': description
-                  , 'start': int(start)
-                  , 'filename': '{year}{month}{day}-{desc}'.format(
-                        desc = description.replace(' ', '-')
-                      , year = year, month = month, day = day
-                    )
-                  , 'date': time.strftime("%0d %B %Y", tstart)
-                  , 'day': time.strftime("%A", tstart)
-                  , 'time': startTime
-                  , 'media': media
-                }]
-        except csv.Error, err:
-            sys.exit('%s,%d: %s' % (filename, reader.line_num, err))
+              , 'date': start.strftime("%0d %B %Y")
+              , 'day': start.strftime("%A")
+              , 'time': start.strftime("%I:%M %p")
+              , 'start': start
+            }]
 except IOError, err:
     sys.exit('%s: %s.' % (err.filename, err.strerror))
 
@@ -186,19 +183,19 @@ def record(game, nextGame):
 # Announce next game {{{1
 def announceNextGame(nextGame):
     if nextGame:
-        print 'Next up for the Giants:'
+        print 'Next up for the 49ers:'
         print '    {desc}'.format(**nextGame)
         print '    {day}, {date}, {time}'.format(**nextGame)
-        if nextGame['media']:
-            print '    {media}'.format(**nextGame)
     else:
         print 'No more games scheduled.'
 
 # Schedule all of the games {{{1
 scheduler = sched.scheduler(time.time, time.sleep)
 nextGame = None
-for game in reversed(games):
-    scheduler.enterabs(game['start'], 1, record, (game,nextGame))
+games.sort(key=lambda game: game['start'], reverse=True)
+for game in games:
+    start = time.mktime(game['start'].timetuple())
+    scheduler.enterabs(start, 1, record, (game,nextGame))
     nextGame = game
 
 announceNextGame(nextGame)
