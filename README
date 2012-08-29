@@ -3,12 +3,12 @@ radioshark
 
 Utilities for use with Griffin Technologies RadioShark.
 
-This repository contains two Python programs:
+This repository contains the following files:
 
 giants.py:
     This program is used to convert a CSV file downloaded from the San Francisco
     Giants website that contains their 2012 schedule into a RadioShark
-    Schedule.ini file. When place in the correct location, this file will cause
+    Schedule.ini file. When placed in the correct location, this file causes
     the RadioShark to record all of the Giants games.
 
 giantsd.py:
@@ -29,8 +29,7 @@ start-49ers:
     A shell script that downloads the latest 49ers schedule from Yahoo and 
     starts the 49ers daemon.
 
-For information about these two programs, visit
-www.nurdletech.com/radioshark.html.
+For information about these files, visit www.nurdletech.com/radioshark.html.
 
 To get the source code:
     $ git clone git://github.com/KenKundert/radioshark.git

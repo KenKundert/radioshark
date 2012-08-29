@@ -19,7 +19,7 @@ import csv
 import argparse
 import time
 import sched
-from fileutils import makePath, expandPath, execute, ExecuteError, remove
+from fileutils import makePath, expandPath, execute, ExecuteError, remove, mkdir
 import sys, io, os
 
 # Read command line {{{1
@@ -161,9 +161,15 @@ def record(game, nextGame):
         recorder=recorder, encoder=encoder
     )
 
+    # assure destination directory exists
+    mkdir(AudioDirectory)
+
     # create a symbolic link to the latest game
     remove(latest)
-    os.symlink(filename, latest)
+    try:
+        os.symlink(filename, latest)
+    except (IOError, OSError), err:
+        exit("%s: %s." % (err.filename, err.strerror))
 
     try:
         # Configure the shark (set station, turn fin red to indicate recording)
