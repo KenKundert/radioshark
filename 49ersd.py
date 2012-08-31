@@ -101,7 +101,7 @@ def record(game, nextGame):
         ]).format(
             filename = filename
           , title = game['desc']
-          , artist = 'The Giants'
+          , artist = 'The 49ers'
           , date = game['date']
         )
     elif Encoder == 'mp3':
@@ -126,7 +126,7 @@ def record(game, nextGame):
         ]).format(
             filename = filename
           , title = game['desc']
-          , artist = 'Giants'
+          , artist = 'The 49ers'
           , date = game['date']
         )
     elif Encoder == 'spx':
@@ -148,7 +148,7 @@ def record(game, nextGame):
         ]).format(
             filename = filename
           , title = game['desc']
-          , artist = 'Giants'
+          , artist = 'The 49ers'
           , date = game['date']
         )
     else:
@@ -159,7 +159,7 @@ def record(game, nextGame):
     )
 
     # assure destination directory exists
-    mkdir(AudioDirectory)
+    mkdir(expandPath(AudioDirectory))
 
     # create a symbolic link to the latest game
     remove(latest)
