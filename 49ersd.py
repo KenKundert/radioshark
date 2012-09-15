@@ -5,13 +5,16 @@
 # sleep and waits for the next game.
 
 # Globals {{{1
-AudioDirectory = '~/music/49ers'
-RecordingDuration = 4
-Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
-SharkAddress = 'hw:2,0'
 Station = '-am 810'
-# Use arecord -l to determine address.
-# First number is card number, second is device number.
+RecordingDuration = 4
+AudioDirectory = '~/music/49ers'
+Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
+SharkHardwareAddress = 'hw:0,0'
+    # use arecord -l to find this address
+    # first number is card number, second is device number.
+SharkCtrlAddress = '0'
+    # address used for sharkctrl
+    # should be set to 0 unless you have more than one fin
 
 
 # Imports {{{1
@@ -27,7 +30,10 @@ import sys, io, os
 # Read command line {{{1
 clp = argparse.ArgumentParser(description="49er's recording daemon")
 clp.add_argument('icsfile', nargs=1, help="49er's schedule as ICS file", action='store')
+clp.add_argument('--duration', '-d', nargs=1, help="duration of recording in hours", action='store')
 args = clp.parse_args()
+if args.duration:
+    RecordingDuration = float(args.duration[0])
 
 # Read ICS file {{{1
 games = []
@@ -47,9 +53,9 @@ try:
                 continue
             games += [{
                 'desc': description
-              , 'filename': '{year}{month}{day}-{desc}'.format(
+                , 'filename': '{year:02d}{month:02d}{day:02d}-{desc}'.format(
                     desc = description.replace(' ', '-')
-                  , year = start.year
+                  , year = start.year%100
                   , month = start.month
                   , day = start.day
                 )
@@ -80,7 +86,7 @@ def record(game, nextGame):
       , '-D {device}'                    # audio generator
       , '-t raw'                         # output format is raw (don't use .wav, it cuts out after 3 hours and 22 minutes because of a size limit on .wav files)
     ]).format(
-        duration = 3600*RecordingDuration, device = SharkAddress
+        duration = 3600*RecordingDuration, device = SharkHardwareAddress
     )
 
     if Encoder == 'ogg':
@@ -166,13 +172,13 @@ def record(game, nextGame):
     try:
         os.symlink(filename, latest)
     except (IOError, OSError), err:
-        exit("%s: %s." % (err.filename, err.strerror))
+        sys.exit("%s: %s." % (err.filename, err.strerror))
 
     try:
         # Configure the shark (set station, turn fin red to indicate recording)
-        execute('sharkctrl %s' % Station)
-        execute('sharkctrl -blue 0')
-        execute('sharkctrl -red 1')
+        execute('sharkctrl %s %s' % (Station, SharkCtrlAddress))
+        execute('sharkctrl -blue 0 %s' % SharkCtrlAddress)
+        execute('sharkctrl -red 1 %s' % SharkCtrlAddress)
 
         # Record the game
         print 'Recording {desc} ({date}).'.format(**game)
@@ -180,8 +186,8 @@ def record(game, nextGame):
         print 'Recording complete.'
 
         # Turn the fin back to blue to indicate not recording
-        execute('sharkctrl -red 0')
-        execute('sharkctrl -blue 63')
+        execute('sharkctrl -red 0 %s' % SharkCtrlAddress)
+        execute('sharkctrl -blue 63 %s' % SharkCtrlAddress)
     except ExecuteError, err:
         sys.exit(err.text)
     announceNextGame(nextGame)
@@ -208,6 +214,6 @@ announceNextGame(nextGame)
 try:
     scheduler.run()
 except KeyboardInterrupt:
-    execute('sharkctrl -red 0')
-    execute('sharkctrl -blue 63')
+    execute('sharkctrl -red 0 %s' % SharkCtrlAddress)
+    execute('sharkctrl -blue 63 %s' % SharkCtrlAddress)
     print "Killed at user request."

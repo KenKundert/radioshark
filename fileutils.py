@@ -146,19 +146,29 @@ def splitPath(path):
     """
     return os.path.split(path)
 
-# Return absolute path
-def absPath(path):
-    """
-    Convert to an absolute path.
-    """
-    return os.path.abspath(path)
-
 # Return normalized path
 def normPath(path):
     """
     Convert to an normalized path (remove redundant separators and up-level references).
     """
     return os.path.normpath(path)
+
+# Return absolute path
+def absPath(path):
+    """
+    Convert to an absolute path.
+    """
+    return os.path.abspath(normPath(path))
+
+# Return relative path
+def relPath(path, start = None):
+    """
+    Convert to an relative path.
+    """
+    if start:
+        return os.path.relpath(normPath(path), start)
+    else:
+        return os.path.relpath(normPath(path))
 
 # Perform common path expansions (user, envvars)
 def expandPath(path):
@@ -236,15 +246,15 @@ def remove(path):
     """
     Remove either a file or a directory.
     """
-    import shutil
-    if exists(path):
-        try:
-            if isDir(path):
-                shutil.rmtree(path)
-            else:
-                os.remove(path)
-        except (IOError, OSError), err:
-            exit("%s: %s." % (err.filename, err.strerror))
+    # if exists(path): # do not test for existance, this will causes misdirected symlinks to be ignored
+    try:
+        if isDir(path):
+            import shutil
+            shutil.rmtree(path)
+        else:
+            os.remove(path)
+    except (IOError, OSError), err:
+        exit("%s: %s." % (err.filename, err.strerror))
 
 def mkdir(path):
     """
@@ -273,6 +283,7 @@ def execute(cmd, accept = None):
             )
         )
     return status
+
 class ExecuteError(Exception):
     def __init__(self, text):
         self.text = text
