@@ -4,12 +4,12 @@
 # it wakes up and records the game. At the end of the game it goes to sleep and
 # waits for the next game.
 
-# Globals {{{1
+# Configuration {{{1
 Station = '-am 680'
 RecordingDuration = 4
 AudioDirectory = '~/music/giants'
 Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
-SharkHardwareAddress = 'hw:2,0'
+SharkHardwareAddress = 'hw:0,0'
     # use arecord -l to find this address
     # first number is card number, second is device number.
 SharkCtrlAddress = '0'

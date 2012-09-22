@@ -4,7 +4,7 @@
 # that time it wakes up and records the game. At the end of the game it goes to
 # sleep and waits for the next game.
 
-# Globals {{{1
+# Configuration {{{1
 Station = '-am 810'
 RecordingDuration = 4
 AudioDirectory = '~/music/49ers'
