@@ -5,6 +5,11 @@ Utilities for use with Griffin Technologies RadioShark.
 
 This repository contains the following files:
 
+fins.py:
+    This configuration file contains information on the hardware address of you 
+    fin or fins. It must be updated if you change where the fin is plugged in or 
+    sometimes when you reboot your machine.
+
 giants.py:
     This program is used to convert a CSV file downloaded from the San Francisco
     Giants website that contains their 2012 schedule into a RadioShark

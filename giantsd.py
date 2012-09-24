@@ -4,26 +4,23 @@
 # it wakes up and records the game. At the end of the game it goes to sleep and
 # waits for the next game.
 
-# Configuration {{{1
-Station = '-am 680'
-RecordingDuration = 4
-AudioDirectory = '~/music/giants'
-Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
-SharkHardwareAddress = 'hw:0,0'
-    # use arecord -l to find this address
-    # first number is card number, second is device number.
-SharkCtrlAddress = '0'
-    # address used for sharkctrl
-    # should be set to 0 unless you have more than one fin
-
-
 # Imports {{{1
+from fins import fins
 import csv
 import argparse
 import time
 import sched
 from fileutils import makePath, expandPath, execute, ExecuteError, remove, mkdir
 import sys, io, os
+
+# Configuration {{{1
+Station = '-am 680'
+RecordingDuration = 4
+AudioDirectory = '~/music/giants'
+Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
+Fin = 'baseball'
+SharkAudioAddr = fins[Fin].audioAddr
+SharkCtrlAddr = fins[Fin].ctrlAddr
 
 # Read command line {{{1
 clp = argparse.ArgumentParser(description="Giant's recording daemon")
@@ -89,7 +86,7 @@ def record(game, nextGame):
       , '-D {device}'                    # audio generator
       , '-t raw'                         # output format is raw (don't use .wav, it cuts out after 3 hours and 22 minutes because of a size limit on .wav files)
     ]).format(
-        duration = 3600*RecordingDuration, device = SharkHardwareAddress
+        duration = 3600*RecordingDuration, device = SharkAudioAddr
     )
 
     if Encoder == 'ogg':
@@ -179,9 +176,9 @@ def record(game, nextGame):
 
     try:
         # Configure the shark (set station, turn fin red to indicate recording)
-        execute('sharkctrl %s %s' % (Station, SharkCtrlAddress))
-        execute('sharkctrl -blue 0 %s' % SharkCtrlAddress)
-        execute('sharkctrl -red 1 %s' % SharkCtrlAddress)
+        execute('sharkctrl %s %s' % (Station, SharkCtrlAddr))
+        execute('sharkctrl -blue 0 %s' % SharkCtrlAddr)
+        execute('sharkctrl -red 1 %s' % SharkCtrlAddr)
 
         # Record the game
         print 'Recording {desc} ({date}).'.format(**game)
@@ -189,8 +186,8 @@ def record(game, nextGame):
         print 'Recording complete.'
 
         # Turn the fin back to blue to indicate not recording
-        execute('sharkctrl -red 0 %s' % SharkCtrlAddress)
-        execute('sharkctrl -blue 63 %s' % SharkCtrlAddress)
+        execute('sharkctrl -red 0 %s' % SharkCtrlAddr)
+        execute('sharkctrl -blue 63 %s' % SharkCtrlAddr)
     except ExecuteError, err:
         sys.exit(err.text)
     announceNextGame(nextGame)
@@ -217,6 +214,6 @@ announceNextGame(nextGame)
 try:
     scheduler.run()
 except KeyboardInterrupt:
-    execute('sharkctrl -red 0 %s' % SharkCtrlAddress)
-    execute('sharkctrl -blue 63 %s' % SharkCtrlAddress)
+    execute('sharkctrl -red 0 %s' % SharkCtrlAddr)
+    execute('sharkctrl -blue 63 %s' % SharkCtrlAddr)
     print "Killed at user request."
