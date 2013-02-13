@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 """Various utilities for interacting with files and directories."""
 
 # Globbing Utilities {{{1
-def getAll(pattern):
+def getAll(pattern='*'):
     """
     Get all items that match a particular glob pattern.
     Supports *, ? and [] globbing (including [!]), but does not support {}
@@ -14,13 +14,13 @@ def getAll(pattern):
     pattern = os.path.expandvars(pattern)
     return glob.glob(pattern)
 
-def getFiles(pattern):
+def getFiles(pattern='*'):
     """
     Get all files that match a particular glob pattern.
     """
     return [each for each in getAll(pattern) if os.path.isfile(each)]
 
-def getDirs(pattern):
+def getDirs(pattern='*'):
     """
     Get all directories that match a particular glob pattern.
     """
@@ -254,7 +254,9 @@ def remove(path):
         else:
             os.remove(path)
     except (IOError, OSError), err:
-        exit("%s: %s." % (err.filename, err.strerror))
+        # don't complain if the file never existed
+        if err.errno != errno.ENOENT:
+            exit("%s: %s." % (err.filename, err.strerror))
 
 def mkdir(path):
     """
@@ -267,6 +269,10 @@ def mkdir(path):
             exit("%s: %s." % (err.filename, err.strerror))
 
 # Execute Utilities {{{1
+class ExecuteError(Exception):
+    def __init__(self, text):
+        self.text = text
+
 # Runs a shell command
 def execute(cmd, accept = None):
     """
@@ -279,11 +285,36 @@ def execute(cmd, accept = None):
     if status not in accept:
         raise ExecuteError(
             "%s: unexpected exit status (%d)." % (
-                cmd, status
+                (cmd if type(cmd) == str else ' '.join(cmd)), status
             )
         )
     return status
 
-class ExecuteError(Exception):
-    def __init__(self, text):
-        self.text = text
+# Runs a shell command while feeding a string into stdin and returning stdout.
+def pipe(cmd, stdin = '', accept = None):
+    """
+    Execute a command and returns the exit status and stdout as a string.
+    Raise an ExecuteError if return status is not in accept.
+    """
+    import subprocess
+    if accept == None:
+        accept = (0,)
+    process = subprocess.Popen(
+        cmd, shell=True,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    process.stdin.write(stdin.encode('UTF-8'))
+    process.stdin.close()
+    stdout = process.stdout.read()
+    stderr = process.stderr.read()
+    status = process.wait()
+    process.stdout.close()
+    process.stderr.close()
+    if status not in accept:
+        raise ExecuteError(
+            "%s: unexpected exit status (%d).\n%s" % (
+                (cmd if type(cmd) == str else ' '.join(cmd)), status, stderr.decode()
+            )
+        )
+    return (status, stdout)
+
