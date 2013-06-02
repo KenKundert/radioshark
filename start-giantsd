@@ -1,6 +1,6 @@
 #!/bin/csh -f
 
-curl "http://mlb.mlb.com/soa/ical/schedule.csv?team_id=137&season=2012&game_type=%27R%27" -o giants-schedule2012.csv
+curl "http://mlb.mlb.com/soa/ical/schedule.csv?team_id=137&season=2013&game_type=%27R%27" -o giants-schedule2013.csv
 
 ~/bin/clear
-./giantsd.py giants-schedule2012.csv
+./giantsd.py -c giants-schedule2013.csv

@@ -6,6 +6,7 @@
 
 # Imports {{{1
 from fins import fins
+from verifaddrs import verifAddrs 
 import csv
 import argparse
 import time
@@ -23,9 +24,10 @@ SharkAudioAddr = fins[Fin].audioAddr
 SharkCtrlAddr = fins[Fin].ctrlAddr
 
 # Read command line {{{1
-clp = argparse.ArgumentParser(description="Giant's recording daemon")
-clp.add_argument('csvfile', nargs=1, help="Giant's schedule as CSV file", action='store')
+clp = argparse.ArgumentParser(description="Giants recording daemon")
+clp.add_argument('csvfile', nargs=1, help="Giants schedule as CSV file", action='store')
 clp.add_argument('--duration', '-d', nargs=1, help="duration of recording in hours", action='store')
+clp.add_argument('--check-addrs', '-c', help="check the addresses used to access the fin", action='store_true')
 args = clp.parse_args()
 if args.duration:
     RecordingDuration = float(args.duration[0])
@@ -49,13 +51,13 @@ try:
                 now = int(time.time())
                 if start < now:
                     continue
-                month, day, year = startDate.split('/')
+                date = time.strftime('%y%m%d', tstart)
                 games += [{
                     'desc': description
                   , 'start': int(start)
-                  , 'filename': '{year}{month}{day}-{desc}'.format(
-                        desc = description.replace(' ', '-')
-                      , year = year, month = month, day = day
+                  , 'filename': '{date}-{desc}'.format(
+                        date = date
+                      , desc = description.replace(' ', '-')
                     )
                   , 'date': time.strftime("%0d %B %Y", tstart)
                   , 'day': time.strftime("%A", tstart)
@@ -98,7 +100,7 @@ def record(game, nextGame):
           , '--downmix'                  # convert from stereo to mono
           , '-q 0'                       # quality level (range is -1 to 10 with 10 being highest)
           , '--ignorelength'             # Allow input stream to exceed 4GB
-          , '-o {filename}'              # output file name
+          , '-o "{filename}"'            # output file name
           , '--title "{title} ({date})"' # title
           , '--album "{title}"'          # album
           , '--artist "{artist}"'        # artist
@@ -202,6 +204,11 @@ def announceNextGame(nextGame):
             print '    {media}'.format(**nextGame)
     else:
         print 'No more games scheduled.'
+
+# Verify the addresses to the fin {{{1
+if args.check_addrs:
+    verifAddrs(Fin)
+    execute('clear')
 
 # Schedule all of the games {{{1
 scheduler = sched.scheduler(time.time, time.sleep)

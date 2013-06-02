@@ -6,6 +6,7 @@
 
 # Imports {{{1
 from fins import fins
+from verifaddrs import verifAddrs 
 import vobject
 import argparse
 import time
@@ -16,8 +17,8 @@ from fileutils import makePath, expandPath, execute, ExecuteError, remove, mkdir
 import sys, io, os
 
 # Configuration {{{1
-Station = '-am 810'
-RecordingDuration = 4
+Station = '-fm 107.7'
+RecordingDuration = 4.0
 AudioDirectory = '~/music/49ers'
 Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
 Fin = 'football'
@@ -28,6 +29,7 @@ SharkCtrlAddr = fins[Fin].ctrlAddr
 clp = argparse.ArgumentParser(description="49er's recording daemon")
 clp.add_argument('icsfile', nargs=1, help="49er's schedule as ICS file", action='store')
 clp.add_argument('--duration', '-d', nargs=1, help="duration of recording in hours", action='store')
+clp.add_argument('--check-addrs', '-c', help="check the addresses used to access the fin", action='store_true')
 args = clp.parse_args()
 if args.duration:
     RecordingDuration = float(args.duration[0])
@@ -95,7 +97,7 @@ def record(game, nextGame):
           , '--downmix'                  # convert from stereo to mono
           , '-q 0'                       # quality level (range is -1 to 10 with 10 being highest)
           , '--ignorelength'             # Allow input stream to exceed 4GB
-          , '-o {filename}'              # output file name
+          , '-o "{filename}"'            # output file name
           , '--title "{title} ({date})"' # title
           , '--album "{title}"'          # album
           , '--artist "{artist}"'        # artist
@@ -197,6 +199,11 @@ def announceNextGame(nextGame):
         print '    {day}, {date}, {time}'.format(**nextGame)
     else:
         print 'No more games scheduled.'
+
+# Verify the addresses to the fin {{{1
+if args.check_addrs:
+    verifAddrs(Fin)
+    execute('clear')
 
 # Schedule all of the games {{{1
 scheduler = sched.scheduler(time.time, time.sleep)
