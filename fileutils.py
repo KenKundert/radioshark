@@ -4,7 +4,7 @@ from fnmatch import fnmatch
 """Various utilities for interacting with files and directories."""
 
 # Globbing Utilities {{{1
-def getAll(pattern):
+def getAll(pattern='*'):
     """
     Get all items that match a particular glob pattern.
     Supports *, ? and [] globbing (including [!]), but does not support {}
@@ -14,26 +14,27 @@ def getAll(pattern):
     pattern = os.path.expandvars(pattern)
     return glob.glob(pattern)
 
-def getFiles(pattern):
+def getFiles(pattern='*'):
     """
     Get all files that match a particular glob pattern.
     """
     return [each for each in getAll(pattern) if os.path.isfile(each)]
 
-def getDirs(pattern):
+def getDirs(pattern='*'):
     """
     Get all directories that match a particular glob pattern.
     """
     return [each for each in getAll(pattern) if os.path.isdir(each)]
 
-def getFilesRecursively(path, acceptCriteria = None, rejectCriteria = None):
+def getFilesRecursively(path, acceptCriteria = None, rejectCriteria = None, exclude = None):
     """
     Returns a generator that iterates through all the files contained in a
     directory hierarchy.  Accept and reject criteria are glob strings, or lists
     of glob strings. For a file to be returned its name must not match any of
     the reject criteria if any are given, and it must match one of the accept
     criteria, if any are given.  If no criteria are given, all files are
-    returned.
+    returned. Exclude is a file or directory or a list of files or directories
+    to exclude. Each is specified relative from the current working directory.
     """
     if type(acceptCriteria) == str:
         acceptCriteria = [acceptCriteria]
@@ -57,13 +58,32 @@ def getFilesRecursively(path, acceptCriteria = None, rejectCriteria = None):
                         return False
             return True
 
+    def prepExcludes(exclude):
+        if not exclude:
+            return []
+        if type(exclude) == str:
+            exclude = [exclude]
+        excludes = []
+        for each in exclude:
+            excludes += [splitPath(each)]
+        return excludes
+
+    def skip(path, excludes):
+        for each in excludes:
+            if splitPath(path)[0:len(each)] == each:
+                return True
+        return False
+
     if isFile(path):
         if yieldFile(path):
             yield path
     else:
+        excludes = prepExcludes(exclude)
         for path, subdirs, files in os.walk(path):
             for file in files:
                 filename = makePath(path, file)
+                if skip(filename, excludes):
+                    continue
                 if yieldFile(filename):
                     yield filename
 
@@ -144,7 +164,7 @@ def splitPath(path):
     """
     Split the path at directory boundaries.
     """
-    return os.path.split(path)
+    return path.split('/')
 
 # Return normalized path
 def normPath(path):
@@ -225,9 +245,9 @@ def copy(src, dest):
             shutil.copytree(src, dest, symlinks=True)
         else:
             shutil.copy2(src, dest)
-    except (IOError, OSError), err:
+    except (IOError, OSError) as err:
         exit("%s: %s." % (err.filename, err.strerror))
-    except shutil.Error, err:
+    except shutil.Error as err:
         exit(["%s to %s: %s." % arg for arg in err.args])
 
 def move(src, dest):
@@ -237,9 +257,9 @@ def move(src, dest):
     import shutil
     try:
         shutil.move(src, dest)
-    except (IOError, OSError), err:
+    except (IOError, OSError) as err:
         exit("%s: %s." % (err.filename, err.strerror))
-    except shutil.Error, err:
+    except shutil.Error as err:
         exit(["%s to %s: %s." % arg for arg in err.args])
 
 def remove(path):
@@ -253,8 +273,19 @@ def remove(path):
             shutil.rmtree(path)
         else:
             os.remove(path)
-    except (IOError, OSError), err:
-        exit("%s: %s." % (err.filename, err.strerror))
+    except (IOError, OSError) as err:
+        # don't complain if the file never existed
+        if err.errno != errno.ENOENT:
+            exit("%s: %s." % (err.filename, err.strerror))
+
+def makeLink(src, dest):
+    """
+    Create a symbolic link.
+    """
+    try:
+        os.symlink(src, dest)
+    except (IOError, OSError) as err:
+        exit("%s: %s." % (dest, err.strerror))
 
 def mkdir(path):
     """
@@ -262,11 +293,17 @@ def mkdir(path):
     """
     try:
         os.makedirs(path)
-    except (IOError, OSError), err:
+    except (IOError, OSError) as err:
         if err.errno != errno.EEXIST:
             exit("%s: %s." % (err.filename, err.strerror))
 
 # Execute Utilities {{{1
+class ExecuteError(Exception):
+    def __init__(self, text):
+        self.text = text
+    def __str__(self):
+        return self.text
+
 # Runs a shell command
 def execute(cmd, accept = None):
     """
@@ -279,11 +316,38 @@ def execute(cmd, accept = None):
     if status not in accept:
         raise ExecuteError(
             "%s: unexpected exit status (%d)." % (
-                cmd, status
+                (cmd if type(cmd) == str else ' '.join(cmd)), status
             )
         )
     return status
 
-class ExecuteError(Exception):
-    def __init__(self, text):
-        self.text = text
+# Runs a shell command while feeding a string into stdin and returning stdout.
+def pipe(cmd, stdin = '', accept = None):
+    """
+    Execute a command and returns the exit status and stdout as a string.
+    Raise an ExecuteError if return status is not in accept unless accept is set
+    to True. Only a status of 0 will be accepted if None is passed as the value
+    of accept.
+    """
+    import subprocess
+    if accept == None:
+        accept = (0,)
+    process = subprocess.Popen(
+        cmd, shell=True,
+        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+    )
+    process.stdin.write(stdin.encode('UTF-8'))
+    process.stdin.close()
+    stdout = process.stdout.read().decode()
+    stderr = process.stderr.read().decode()
+    status = process.wait()
+    process.stdout.close()
+    process.stderr.close()
+    if accept is not True and status not in accept:
+        raise ExecuteError(
+            "%s: unexpected exit status (%d).\n%s" % (
+                (cmd if type(cmd) == str else ' '.join(cmd)), status, stderr
+            )
+        )
+    return (status, stdout)
+
