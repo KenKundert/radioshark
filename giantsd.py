@@ -6,6 +6,7 @@
 
 # Imports {{{1
 from fins import fins
+from verifaddrs import verifAddrs 
 import csv
 import argparse
 import time
@@ -26,6 +27,7 @@ SharkCtrlAddr = fins[Fin].ctrlAddr
 clp = argparse.ArgumentParser(description="Giants recording daemon")
 clp.add_argument('csvfile', nargs=1, help="Giants schedule as CSV file", action='store')
 clp.add_argument('--duration', '-d', nargs=1, help="duration of recording in hours", action='store')
+clp.add_argument('--check-addrs', '-c', help="check the addresses used to access the fin", action='store_true')
 args = clp.parse_args()
 if args.duration:
     RecordingDuration = float(args.duration[0])
@@ -202,6 +204,11 @@ def announceNextGame(nextGame):
             print '    {media}'.format(**nextGame)
     else:
         print 'No more games scheduled.'
+
+# Verify the addresses to the fin {{{1
+if args.check_addrs:
+    verifAddrs(Fin)
+    execute('clear')
 
 # Schedule all of the games {{{1
 scheduler = sched.scheduler(time.time, time.sleep)

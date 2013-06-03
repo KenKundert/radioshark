@@ -21,7 +21,7 @@ Station = '-fm 107.7'
 RecordingDuration = 4.0
 AudioDirectory = '~/music/49ers'
 Encoder = 'ogg' # choose from 'ogg', 'mp3', 'spx'
-Fin = 'baseball'
+Fin = 'football'
 SharkAudioAddr = fins[Fin].audioAddr
 SharkCtrlAddr = fins[Fin].ctrlAddr
 

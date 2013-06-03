@@ -20,8 +20,11 @@ def verifAddrs(finName):
     audioAddr = fin.audioAddr
     ctrlAddr = fin.ctrlAddr
 
+    print "Using %s fin (audioAddr='%s', ctrlAddr='%s').\n" % (
+        finName, fin.audioAddr, fin.ctrlAddr
+    )
     print fill(dedent("""\
-        The fin is about to be tested. This will reset the station on both fins.
+        This fin is about to be tested. This will reset the station on both fins.
         Do not do this if you are already recording a program on the other fin.
         You have 10 seconds to kill me to avoid changing the station.
     """))
