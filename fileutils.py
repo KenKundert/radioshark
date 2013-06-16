@@ -164,7 +164,7 @@ def splitPath(path):
     """
     Split the path at directory boundaries.
     """
-    return path.split('/')
+    return path.split(os.pathsep)
 
 # Return normalized path
 def normPath(path):
@@ -303,6 +303,24 @@ class ExecuteError(Exception):
         self.text = text
     def __str__(self):
         return self.text
+
+def which(name, flags=os.X_OK):
+    """Search PATH for executable files with the given name.
+
+    Arguments:
+    name (str): The name for which to search.
+    flags (int): Arguments to os.access.
+
+    A list of the full paths to files found, in the order in which they were
+    found.
+    """
+    result = []
+    path = os.environ.get('PATH', '')
+    for p in path.split(os.pathsep):
+        p = os.path.join(p, name)
+        if os.access(p, flags):
+            result.append(p)
+    return result
 
 # Runs a shell command
 def execute(cmd, accept = None):
