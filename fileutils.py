@@ -164,7 +164,7 @@ def splitPath(path):
     """
     Split the path at directory boundaries.
     """
-    return path.split(os.pathsep)
+    return path.split(os.path.sep)
 
 # Return normalized path
 def normPath(path):
