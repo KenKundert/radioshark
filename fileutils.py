@@ -325,13 +325,24 @@ def which(name, flags=os.X_OK):
 # Runs a shell command
 def execute(cmd, accept = None):
     """
-    Execute a command. Raise an ExecuteError if return status is not in accept.
+    Execute a command. Raise an ExecuteError if exit status is not in accept.
+    If accept is True, all exit status values are accepted.
     """
     import subprocess
     if accept == None:
         accept = (0,)
-    status = subprocess.call(cmd, shell=True)
-    if status not in accept:
+    try:
+        status = subprocess.call(cmd, shell=True)
+    except (IOError, OSError) as err:
+        if err.filename:
+            filename = err.filename
+        else:
+            if type(cmd) == list:
+                filename = cmd.split()[0]
+            else:
+                filename = cmd[0]
+        raise ExecuteError("%s: %s." % (filename, err.strerror))
+    if accept is not True and status not in accept:
         raise ExecuteError(
             "%s: unexpected exit status (%d)." % (
                 (cmd if type(cmd) == str else ' '.join(cmd)), status
@@ -350,10 +361,21 @@ def pipe(cmd, stdin = '', accept = None):
     import subprocess
     if accept == None:
         accept = (0,)
-    process = subprocess.Popen(
-        cmd, shell=True,
-        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE
-    )
+    try:
+        process = subprocess.Popen(
+            cmd, shell=True,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    except (IOError, OSError) as err:
+        if err.filename:
+            filename = err.filename
+        else:
+            if type(cmd) == list:
+                filename = cmd.split()[0]
+            else:
+                filename = cmd[0]
+        FatalError("%s: %s." % (filename, err.strerror))
     process.stdin.write(stdin.encode('UTF-8'))
     process.stdin.close()
     stdout = process.stdout.read().decode()
