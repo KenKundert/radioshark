@@ -53,3 +53,5 @@ Once cloned, you can get the latest updates using:
 Before you can use them, you will need to install the libhid-devel, alsa-utils,
 vorbis-tools, and mplayer packages. To do so on Fedora, as root run:
     # yum install libhid-devel alsa-utils vorbis-tools mplayer
+Then follow the instructions found in fins.py to configure your fins.
+

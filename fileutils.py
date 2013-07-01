@@ -262,11 +262,11 @@ def move(src, dest):
     except shutil.Error as err:
         exit(["%s to %s: %s." % arg for arg in err.args])
 
-def remove(path):
+def remove(path, exitUponError=True):
     """
     Remove either a file or a directory.
     """
-    # if exists(path): # do not test for existance, this will causes misdirected symlinks to be ignored
+    # if exists(path): # do not test for existence, this will causes misdirected symlinks to be ignored
     try:
         if isDir(path):
             import shutil
@@ -276,7 +276,10 @@ def remove(path):
     except (IOError, OSError) as err:
         # don't complain if the file never existed
         if err.errno != errno.ENOENT:
-            exit("%s: %s." % (err.filename, err.strerror))
+            if exitUponError:
+                exit("%s: %s." % (err.filename, err.strerror))
+            else:
+                raise
 
 def makeLink(src, dest):
     """
@@ -299,11 +302,68 @@ def mkdir(path):
 
 # Execute Utilities {{{1
 class ExecuteError(Exception):
-    def __init__(self, text):
-        self.text = text
+    def __init__(self, cmd, error, filename=None, showCmd=False):
+        self.cmd = cmd if type(cmd) is str else ' '.join(cmd)
+        self.filename = filename
+        self.error = error
+        self.showCmd = showCmd
     def __str__(self):
-        return self.text
+        filename = (
+            self.filename
+            if self.filename
+            else (
+                self.cmd if self.showCmd else self.cmd.split()[0]
+            )
+        )
+        return "%s: %s." % (filename, self.error)
 
+# Execute: Runs a shell command ignoring streams {{{2
+def execute(cmd, accept = (0,)):
+    """
+    Execute a command. Raise an ExecuteError if exit status is not in accept.
+    If accept is True, all exit status values are accepted.
+    """
+    import subprocess
+    try:
+        status = subprocess.call(cmd, shell=True)
+    except (IOError, OSError) as err:
+        raise ExecuteError(cmd, err.filename, err.strerror)
+    if accept is not True and status not in accept:
+        raise ExecuteError(cmd, "unexpected exit status (%d)" % status, showCmd=True)
+    return status
+
+# Pipe: Runs a shell command with access to streams {{{2
+def pipe(cmd, stdin = '', accept = (0,)):
+    """
+    Execute a command and returns the exit status and stdout as a string.
+    Raise an ExecuteError if return status is not in accept unless accept is set
+    to True. Only a status of 0 will be accepted if None is passed as the value
+    of accept.
+    """
+    import subprocess
+    try:
+        process = subprocess.Popen(
+            cmd, shell=True,
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+    except (IOError, OSError) as err:
+        raise ExecuteError(cmd, err.filename, err.strerror)
+    process.stdin.write(stdin.encode('UTF-8'))
+    process.stdin.close()
+    stdout = process.stdout.read().decode()
+    stderr = process.stderr.read().decode()
+    status = process.wait()
+    process.stdout.close()
+    process.stderr.close()
+    if accept is not True and status not in accept:
+        if stderr:
+            raise ExecuteError(cmd, stderr, showCmd=True)
+        else:
+            raise ExecuteError(cmd, "unexpected exit status (%d)" % status, showCmd=True)
+    return (status, stdout)
+
+# Which: Search path for executable files with given name {{{2
 def which(name, flags=os.X_OK):
     """Search PATH for executable files with the given name.
 
@@ -321,73 +381,4 @@ def which(name, flags=os.X_OK):
         if os.access(p, flags):
             result.append(p)
     return result
-
-# Runs a shell command
-def execute(cmd, accept = None):
-    """
-    Execute a command. Raise an ExecuteError if exit status is not in accept.
-    If accept is True, all exit status values are accepted.
-    """
-    import subprocess
-    if accept == None:
-        accept = (0,)
-    try:
-        status = subprocess.call(cmd, shell=True)
-    except (IOError, OSError) as err:
-        if err.filename:
-            filename = err.filename
-        else:
-            if type(cmd) == list:
-                filename = cmd.split()[0]
-            else:
-                filename = cmd[0]
-        raise ExecuteError("%s: %s." % (filename, err.strerror))
-    if accept is not True and status not in accept:
-        raise ExecuteError(
-            "%s: unexpected exit status (%d)." % (
-                (cmd if type(cmd) == str else ' '.join(cmd)), status
-            )
-        )
-    return status
-
-# Runs a shell command while feeding a string into stdin and returning stdout.
-def pipe(cmd, stdin = '', accept = None):
-    """
-    Execute a command and returns the exit status and stdout as a string.
-    Raise an ExecuteError if return status is not in accept unless accept is set
-    to True. Only a status of 0 will be accepted if None is passed as the value
-    of accept.
-    """
-    import subprocess
-    if accept == None:
-        accept = (0,)
-    try:
-        process = subprocess.Popen(
-            cmd, shell=True,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE
-        )
-    except (IOError, OSError) as err:
-        if err.filename:
-            filename = err.filename
-        else:
-            if type(cmd) == list:
-                filename = cmd.split()[0]
-            else:
-                filename = cmd[0]
-        FatalError("%s: %s." % (filename, err.strerror))
-    process.stdin.write(stdin.encode('UTF-8'))
-    process.stdin.close()
-    stdout = process.stdout.read().decode()
-    stderr = process.stderr.read().decode()
-    status = process.wait()
-    process.stdout.close()
-    process.stderr.close()
-    if accept is not True and status not in accept:
-        raise ExecuteError(
-            "%s: unexpected exit status (%d).\n%s" % (
-                (cmd if type(cmd) == str else ' '.join(cmd)), status, stderr
-            )
-        )
-    return (status, stdout)
 

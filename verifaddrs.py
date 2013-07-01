@@ -47,6 +47,8 @@ def verifAddrs(finName):
             for addr in ctrlAddrs:
                 execute('sharkctrl -fm 97.7 %s' % addr)
 
+        audioAddr = fin.audioAddr
+        ctrlAddr = fin.ctrlAddr
         print "ctrl addr:", ctrlAddr
         print "audio addr:", audioAddr
         print "station: KNBR 680 AM"
