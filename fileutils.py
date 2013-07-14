@@ -237,9 +237,10 @@ def copy(src, dest):
     """
     import shutil
     destpath = splitPath(dest)[0:-1]
-    destpath = makePath(*destpath)
-    if destpath and not exists(destpath):
-        os.makedirs(destpath)
+    if destpath:
+        destpath = makePath(*destpath)
+        if not exists(destpath):
+            os.makedirs(destpath)
     try:
         if isDir(src):
             shutil.copytree(src, dest, symlinks=True)
