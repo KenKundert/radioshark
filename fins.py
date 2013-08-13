@@ -18,6 +18,6 @@ class Info():
 # fin uses or if you reboot the machine.
 
 fins = {
-    'baseball': Info(audioAddr='hw:1,0', ctrlAddr='0'),
-    'football': Info(audioAddr='hw:0,0', ctrlAddr='1')
+    'baseball': Info(audioAddr='hw:2,0', ctrlAddr='0'),
+    'football': Info(audioAddr='hw:1,0', ctrlAddr='1')
 }

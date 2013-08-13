@@ -68,7 +68,13 @@ def verifAddrs(finName):
 
 if __name__ == "__main__":
     try:
+        print "Football Fin"
+        print "############"
         verifAddrs('football')
+        print
+        print "Baseball Fin"
+        print "############"
+        verifAddrs('baseball')
     except KeyboardInterrupt:
         execute('sharkctrl -red 0 %s' % ctrlAddr)
         execute('sharkctrl -blue 63 %s' % ctrlAddr)
