@@ -308,6 +308,7 @@ class ExecuteError(Exception):
         self.filename = filename
         self.error = error
         self.showCmd = showCmd
+
     def __str__(self):
         filename = (
             self.filename
@@ -330,7 +331,7 @@ def execute(cmd, accept = (0,)):
     except (IOError, OSError) as err:
         raise ExecuteError(cmd, err.filename, err.strerror)
     if accept is not True and status not in accept:
-        raise ExecuteError(cmd, "unexpected exit status (%d)" % status, showCmd=True)
+        raise ExecuteError(cmd, "unexpected exit status (%d)" % status)
     return status
 
 # Pipe: Runs a shell command with access to streams {{{2
@@ -359,9 +360,9 @@ def pipe(cmd, stdin = '', accept = (0,)):
     process.stderr.close()
     if accept is not True and status not in accept:
         if stderr:
-            raise ExecuteError(cmd, stderr, showCmd=True)
+            raise ExecuteError(cmd, stderr)
         else:
-            raise ExecuteError(cmd, "unexpected exit status (%d)" % status, showCmd=True)
+            raise ExecuteError(cmd, "unexpected exit status (%d)" % status)
     return (status, stdout)
 
 # Which: Search path for executable files with given name {{{2
