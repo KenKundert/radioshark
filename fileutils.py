@@ -320,14 +320,14 @@ class ExecuteError(Exception):
         return "%s: %s." % (filename, self.error)
 
 # Execute: Runs a shell command ignoring streams {{{2
-def execute(cmd, accept = (0,)):
+def execute(cmd, accept = (0,), shell=True):
     """
     Execute a command. Raise an ExecuteError if exit status is not in accept.
     If accept is True, all exit status values are accepted.
     """
     import subprocess
     try:
-        status = subprocess.call(cmd, shell=True)
+        status = subprocess.call(cmd, shell=shell)
     except (IOError, OSError) as err:
         raise ExecuteError(cmd, err.filename, err.strerror)
     if accept is not True and status not in accept:
@@ -335,7 +335,7 @@ def execute(cmd, accept = (0,)):
     return status
 
 # Pipe: Runs a shell command with access to streams {{{2
-def pipe(cmd, stdin = '', accept = (0,)):
+def pipe(cmd, stdin = '', accept = (0,), shell=True):
     """
     Execute a command and returns the exit status and stdout as a string.
     Raise an ExecuteError if return status is not in accept unless accept is set
@@ -345,7 +345,7 @@ def pipe(cmd, stdin = '', accept = (0,)):
     import subprocess
     try:
         process = subprocess.Popen(
-            cmd, shell=True,
+            cmd, shell=shell,
             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             stderr=subprocess.PIPE
         )
