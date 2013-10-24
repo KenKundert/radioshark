@@ -351,10 +351,10 @@ def pipe(cmd, stdin = '', accept = (0,), shell=True):
         )
     except (IOError, OSError) as err:
         raise ExecuteError(cmd, err.filename, err.strerror)
-    process.stdin.write(stdin.encode('UTF-8'))
+    process.stdin.write(stdin.encode('utf-8'))
     process.stdin.close()
-    stdout = process.stdout.read().decode()
-    stderr = process.stderr.read().decode()
+    stdout = process.stdout.read().decode('utf-8')
+    stderr = process.stderr.read().decode('utf-8')
     status = process.wait()
     process.stdout.close()
     process.stderr.close()
