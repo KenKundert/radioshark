@@ -261,7 +261,7 @@ def move(src, dest):
     except (IOError, OSError) as err:
         exit("%s: %s." % (err.filename, err.strerror))
     except shutil.Error as err:
-        exit(["%s to %s: %s." % arg for arg in err.args])
+        exit("Cannot rename %s to %s: %s." % (src, dest, ', '.join(err.args)))
 
 def remove(path, exitUponError=True):
     """
