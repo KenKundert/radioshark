@@ -42,8 +42,6 @@ test-49ersd.py:
     A program that exercises 49ersd.py. It is used to give you confidence that 
     things will work as expected when the time comes to record the games.
 
-For information about these files, visit www.nurdletech.com/radioshark.html.
-
 To get the source code:
     $ git clone git://github.com/KenKundert/radioshark.git
 
