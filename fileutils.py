@@ -130,12 +130,12 @@ def fileIsWritable(filepath):
     If filepath exists, determine whether it is writable by user.
     If not, determine if directory is writable by user.
     """
-    if os.path.isfile(filepath) and os.access(filepath, os.W_OK):
+    if os.path.exists(filepath) and os.access(filepath, os.W_OK):
         return True
     else:
         path = os.path.split(filepath)
         dirpath = os.path.join(*path[:-1])
-        return os.path.isdir(dirpath) and os.access(filepath, os.W_OK)
+        return os.path.isdir(dirpath) and os.access(dirpath, os.W_OK)
 
 # Directory Utilities {{{2
 def dirIsReadable(dirpath):
@@ -157,7 +157,10 @@ def makePath(*args):
     """
     Join the arguments together into a filesystem path.
     """
-    return os.path.join(*args)
+    if len(args):
+        return os.path.join(*args)
+    else:
+        return ''
 
 # Splits path at directory boundaries into its component pieces
 def splitPath(path):
